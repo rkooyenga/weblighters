@@ -1,5 +1,4 @@
 # Weblighters
-Weblighters :: Highlighter pens for the web
 
 **Highlight and Share: Highlighter Pens for the Web**
 
