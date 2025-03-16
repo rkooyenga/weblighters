@@ -4,12 +4,6 @@
 
 Weblighters provides a user-friendly way to highlight text on webpages, with the highlights persisting regardless of other mouse actions. This makes it ideal for emphasizing key sections of articles or content for screenshots and sharing.
 
-**This version is the Weblighters Bookmarklet.** In the near future, Weblighters will also be available as:
-
-* **`weblighters.js`:** A standalone JavaScript file for easy integration into websites.
-* **React Module:** A component for use in React applications.
-* **Node Package:** For server-side or build process integration.
-
 ## Overview (Bookmarklet Version)
 
 The Weblighters bookmarklet allows you to:
