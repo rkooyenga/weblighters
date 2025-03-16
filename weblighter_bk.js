@@ -1,4 +1,4 @@
-javascript:!(function () {
+!(function () {
     /* Weblighters by Ray Kooyenga - MIT License */
     const colors = [
         { name: "gold", rgb: "255,215,0" },
@@ -13,6 +13,14 @@ javascript:!(function () {
     let switchTimeout = null;
     let waitingForColorKey = false;
     let selectionStyleElement = null;
+    let paletteVisible = false;
+    let highlightTextColor = null; // Can be 'white', 'black', or null for original
+    let customColor = null; // To store the value from the color picker
+
+    // Check if Weblighters is already running
+    if (document.querySelector('.weblighter-palette-container')) {
+        return; // Exit if already running
+    }
 
     function createCursor(color) {
         const svg = `<svg viewBox="0 0 24 24" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
@@ -25,13 +33,18 @@ javascript:!(function () {
     }
 
     function applyHighlighter() {
-        const color = colors[currentColorIndex].rgb;
+        const color = customColor ? customColor : colors[currentColorIndex].rgb;
         const selection = window.getSelection();
         if (!selection.isCollapsed) {
             const range = selection.getRangeAt(0);
             const span = document.createElement("span");
             span.className = "weblighter";
             span.style.background = `linear-gradient(to bottom, rgba(${color},0) 10%, rgb(${color}) 22%, rgb(${color}) 75%, rgba(${color},1) 90%, rgba(${color},0) 100%)`;
+            if (highlightTextColor === 'white') {
+                span.style.color = 'white';
+            } else if (highlightTextColor === 'black') {
+                span.style.color = 'black';
+            }
             range.surroundContents(span);
             selection.removeAllRanges();
         }
@@ -46,18 +59,29 @@ javascript:!(function () {
     }
 
     function showColorPalette(event) {
-        const palette = document.createElement('div');
-        palette.style.position = 'fixed';
-        palette.style.top = `${event.clientY + 10}px`;
-        palette.style.left = `${event.clientX + 10}px`;
-        palette.style.backgroundColor = 'rgba(100,100,100,0.4)';
-        palette.style.border = '1px solid rgba(250,250,250,0.7)';
-        palette.style.borderRadius = '10px';
-        palette.style.backdropFilter='blur(4px)';
-        palette.style.padding = '10px';
-        palette.style.zIndex = '10000';
-        palette.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.2)';
+        if (paletteVisible) {
+            return; // Don't show if already visible
+        }
+        paletteVisible = true;
+        customColor = null; // Reset custom color when palette opens
 
+        const paletteContainer = document.createElement('div');
+        paletteContainer.className = 'weblighter-palette-container'; // For checking if running
+        paletteContainer.style.position = 'fixed';
+        paletteContainer.style.top = `${event.clientY + 10}px`;
+        paletteContainer.style.left = `${event.clientX + 10}px`;
+        paletteContainer.style.backgroundColor = 'rgba(40,40,40,0.4)';
+        paletteContainer.style.backgroundImage= 'linear-gradient(rgb(51, 51, 51), rgb(17, 17, 17))';
+        paletteContainer.style.border = '1px solid rgba(250,250,250,0.7)';
+        paletteContainer.style.borderRadius = '10px';
+        paletteContainer.style.backdropFilter = 'blur(4px)';
+        paletteContainer.style.padding = '10px';
+        paletteContainer.style.zIndex = '10000';
+        paletteContainer.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.2)';
+
+        // Color Swatches
+        const colorSwatchRow = document.createElement('div');
+        colorSwatchRow.style.marginBottom = '10px';
         colors.forEach((colorObj, index) => {
             const colorSwatch = document.createElement('div');
             colorSwatch.style.width = '30px';
@@ -71,15 +95,101 @@ javascript:!(function () {
 
             colorSwatch.addEventListener('click', () => {
                 currentColorIndex = index;
-                document.documentElement.style.cursor = createCursor(colors[currentColorIndex].rgb);
-                updateSelectionStyle(colors[currentColorIndex].rgb);
-                palette.remove();
+                // No need to update immediately here, button will handle it
             });
-
-            palette.appendChild(colorSwatch);
+            colorSwatchRow.appendChild(colorSwatch);
         });
+        paletteContainer.appendChild(colorSwatchRow);
 
-        document.body.appendChild(palette);
+        // Custom Color Picker
+        const customColorRow = document.createElement('div');
+        customColorRow.style.marginBottom = '10px';
+        const colorPicker = document.createElement('input');
+        colorPicker.type = 'color';
+        colorPicker.style.cursor = 'pointer';
+        colorPicker.style.marginRight = '5px';
+        colorPicker.addEventListener('input', (event) => {
+            customColor = event.target.value.substring(4, event.target.value.length - 1).split(',').join(',');
+            // No need to update immediately here, button will handle it
+        });
+        customColorRow.appendChild(colorPicker);
+        paletteContainer.appendChild(customColorRow);
+
+
+        // Text Color Options
+        const textColorRow = document.createElement('div');
+        textColorRow.style.marginBottom = '10px';
+        const textColorLabel = document.createElement('span');
+        textColorLabel.textContent = 'Text Color: ';
+        textColorLabel.style.color = '#eee';
+        textColorLabel.style.marginRight = '5px';
+        textColorRow.appendChild(textColorLabel);
+
+        const textColorOptions = [
+            { label: 'White', value: 'white' },
+            { label: 'Black', value: 'black' },
+            { label: 'Original', value: null }
+        ];
+
+        textColorOptions.forEach(option => {
+            const button = document.createElement('button');
+            button.textContent = option.label;
+            button.style.marginRight = '5px';
+            button.style.cursor = 'pointer';
+            button.addEventListener('click', () => {
+                highlightTextColor = option.value;
+                // No need to update immediately here, button will handle it
+            });
+            textColorRow.appendChild(button);
+        });
+        paletteContainer.appendChild(textColorRow);
+
+        // Update Weblighter Color Button
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update Weblighter Color';
+        updateButton.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        updateButton.style.color = 'white';
+        updateButton.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+        updateButton.style.borderRadius = '5px';
+        updateButton.style.padding = '8px 15px';
+        updateButton.style.cursor = 'pointer';
+        updateButton.style.fontSize = '0.9em';
+        updateButton.style.transition = 'background-color 0.2s, transform 0.1s';
+        updateButton.style.marginBottom = '10px';
+
+        updateButton.addEventListener('mouseover', () => {
+            updateButton.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+        });
+        updateButton.addEventListener('mouseout', () => {
+            updateButton.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        });
+        updateButton.addEventListener('mousedown', () => {
+            updateButton.style.transform = 'scale(0.95)';
+        });
+        updateButton.addEventListener('mouseup', () => {
+            updateButton.style.transform = 'scale(1)';
+            const finalColor = customColor ? customColor : colors[currentColorIndex].rgb;
+            document.documentElement.style.cursor = createCursor(finalColor);
+            updateSelectionStyle(finalColor);
+            paletteContainer.remove();
+            paletteVisible = false;
+        });
+        paletteContainer.appendChild(updateButton);
+
+
+        // Attribution
+        const attributionRow = document.createElement('div');
+        attributionRow.style.fontSize = '0.8em';
+        attributionRow.style.color = '#ccc';
+        const link = document.createElement('a');
+        link.href = '//rkooyenga.github.io';
+        link.textContent = 'Weblighters by Ray Kooyenga 2024';
+        link.style.color = '#eee';
+        link.style.textDecoration = 'none';
+        attributionRow.appendChild(link);
+        paletteContainer.appendChild(attributionRow);
+
+        document.body.appendChild(paletteContainer);
     }
 
     document.addEventListener("mouseup", () => {
@@ -90,7 +200,7 @@ javascript:!(function () {
         if (event.button === 0) {
             switchTimeout = setTimeout(() => {
                 waitingForColorKey = true;
-            }, 2000);
+            }, 500);
         }
     });
 
@@ -115,6 +225,7 @@ javascript:!(function () {
         }
     });
 
-    document.documentElement.style.cursor = createCursor(colors[currentColorIndex].rgb);
-    updateSelectionStyle(colors[currentColorIndex].rgb);
+    const initialColor = colors[currentColorIndex].rgb;
+    document.documentElement.style.cursor = createCursor(initialColor);
+    updateSelectionStyle(initialColor);
 })();
