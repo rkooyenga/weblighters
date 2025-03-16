@@ -130,6 +130,7 @@ javascript:!(function () {
         moreButton.style.color = '#fff';
         moreButton.style.border = '1px outset white';
         moreButton.style.cursor = 'pointer';
+        moreButton.style.fontWeight = 'bold';
         moreButton.style.fontSize = '1.2em';
         moreButton.style.padding = '5px 10px';
         moreButton.style.borderRadius = '5px';
