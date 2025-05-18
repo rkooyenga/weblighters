@@ -61,7 +61,6 @@ Contributions to Weblighters are welcome! Please feel free to open issues or sub
 
 ## License
 
-This project is licensed under the MIT License.
 
 ## Links
 
